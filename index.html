@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DATA PATH – Perjalanan Data dari Input ke Output</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2235;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #f59e0b;
+      --green: #10b981;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --border: rgba(0, 229, 255, 0.15);
+      --glow: 0 0 30px rgba(0, 229, 255, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── PAGES ─── */
+    .page {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .page.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── SHARED NAV ─── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(10, 14, 26, 0.9);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .btn-menu {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      transition: all .2s;
+    }
+
+    .btn-menu:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      color: #fff;
+      padding: 14px 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 1px;
+      transition: all .3s;
+      box-shadow: var(--glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(0, 229, 255, 0.35);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 12px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all .3s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(0, 229, 255, 0.1);
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .2s;
+      padding: 0;
+    }
+
+    .btn-back:hover {
+      color: var(--accent);
+    }
+
+    /* ─── SCAN LINE EFFECT ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 229, 255, 0.01) 2px, rgba(0, 229, 255, 0.01) 4px);
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ══════════════════════════════════
+     PAGE 1 – HALAMAN UTAMA (SPLASH)
+  ══════════════════════════════════ */
+    #page-splash {
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+        var(--bg);
+      text-align: center;
+      padding: 40px;
+      animation: fadeIn .6s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .splash-badge {
+      display: inline-block;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      letter-spacing: 2px;
+      margin-bottom: 32px;
+    }
+
+    .splash-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(48px, 8vw, 90px);
+      line-height: 1;
+      color: #fff;
+      letter-spacing: -2px;
+      margin-bottom: 16px;
+    }
+
+    .splash-title span {
+      color: var(--accent);
+      text-shadow: 0 0 40px var(--accent);
+    }
+
+    .splash-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .splash-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .splash-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ══════════════════════════════════
+     PAGE 2 – MENU UTAMA
+  ══════════════════════════════════ */
+    #page-menu {
+      background: var(--bg);
+    }
+
+    .menu-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      background: radial-gradient(ellipse at 30% 50%, rgba(0, 229, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 50%, rgba(124, 58, 237, 0.05) 0%, transparent 50%);
+    }
+
+    .menu-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 4px;
+      color: var(--accent);
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 820px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .menu-grid .menu-card:nth-child(4) {
+      grid-column: 1 / 2;
+      justify-self: end;
+    }
+
+    .menu-grid .menu-card:nth-child(5) {
+      grid-column: 2 / 3;
+      justify-self: start;
+    }
+
+    .menu-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      cursor: pointer;
+      transition: all .3s;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .menu-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      transform: scaleX(0);
+      transition: transform .3s;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+    }
+
+    .menu-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .menu-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .menu-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .menu-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════
+     INNER PAGES LAYOUT
+  ══════════════════════════════════ */
+    .inner-body {
+      flex: 1;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .inner-header {
+      margin-bottom: 40px;
+    }
+
+    .inner-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(28px, 5vw, 44px);
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    .inner-header h1 span {
+      color: var(--accent);
+    }
+
+    .inner-header p {
+      color: var(--text-muted);
+      margin-top: 10px;
+      font-size: 15px;
+    }
+
+    /* ══════════════════════════════════
+     PAGE 3 – TUJUAN PEMBELAJARAN
+  ══════════════════════════════════ */
+    .tujuan-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      animation: slideIn .4s ease both;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .tujuan-num {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tujuan-text {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    /* ══════════════════════════════════
+     PAGE 4 – PANDUAN PENGGUNAAN
+  ══════════════════════════════════ */
+    .panduan-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      animation: slideIn .4s ease both;
+    }
+
+    .panduan-icon {
+      font-size: 28px;
+    }
+
+    .panduan-step h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .panduan-step p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ══════════════════════════════════
+     PAGE 5 – MENU MATERI
+  ══════════════════════════════════ */
+    .materi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+    }
+
+    .materi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 20px;
+      cursor: pointer;
+      transition: all .3s;
+      text-align: center;
+    }
+
+    .materi-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: var(--glow);
+    }
+
+    .materi-card .icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .materi-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .materi-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ══════════════════════════════════
+     PAGE 6 – HALAMAN MATERI (DETAIL)
+  ══════════════════════════════════ */
+    .materi-content {
+      animation: fadeIn .4s ease;
+    }
+
+    .materi-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .materi-section h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .materi-section p {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .materi-section ul {
+      padding-left: 20px;
+    }
+
+    .materi-section ul li {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .device-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .device-chip {
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .materi-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+    }
+
+    /* ══════════════════════════════════
+     PAGE 7 – SIMULASI DATA
+  ══════════════════════════════════ */
+    .sim-container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .sim-input-area {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .sim-input-area label {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .sim-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      outline: none;
+      transition: border .2s;
+    }
+
+    .sim-input:focus {
+      border-color: var(--accent);
+    }
+
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 24px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .flow-node {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      min-width: 140px;
+      transition: all .5s;
+      position: relative;
+    }
+
+    .flow-node.active {
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+      background: rgba(0, 229, 255, 0.07);
+    }
+
+    .flow-node.done {
+      border-color: var(--green);
+      background: rgba(16, 185, 129, 0.07);
+    }
+
+    .flow-node .fn-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .flow-node h4 {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .flow-node .fn-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 6px;
+      min-height: 20px;
+      transition: all .5s;
+    }
+
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 24px;
+      padding: 0 8px;
+      flex-shrink: 0;
+      transition: color .5s;
+    }
+
+    .flow-arrow.active {
+      color: var(--accent);
+    }
+
+    .sim-result {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      min-height: 100px;
+      transition: all .5s;
+    }
+
+    .sim-result.show {
+      border-color: var(--green);
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+    }
+
+    .sim-result h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .sim-result .result-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      color: var(--green);
+    }
+
+    /* ══════════════════════════════════
+     PAGE 8 – KUIS
+  ══════════════════════════════════ */
+    .quiz-start {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .quiz-start h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+
+    .quiz-start p {
+      color: var(--text-muted);
+      font-size: 16px;
+      margin-bottom: 40px;
+    }
+
+    .quiz-question-area {
+      flex: 1;
+      padding: 40px 24px;
+      max-width: 700px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .quiz-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .quiz-progress-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .quiz-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width .4s ease;
+    }
+
+    .quiz-progress-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .quiz-q-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      animation: fadeIn .3s ease;
+    }
+
+    .quiz-q-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: #fff;
+      line-height: 1.5;
+    }
+
+    .quiz-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .quiz-opt {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: all .25s;
+      font-size: 15px;
+      color: var(--text);
+      text-align: left;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .quiz-opt:hover:not(.disabled) {
+      border-color: var(--accent);
+      background: rgba(0, 229, 255, 0.06);
+    }
+
+    .quiz-opt.correct {
+      border-color: var(--green) !important;
+      background: rgba(16, 185, 129, 0.1) !important;
+      color: var(--green) !important;
+    }
+
+    .quiz-opt.wrong {
+      border-color: var(--red) !important;
+      background: rgba(239, 68, 68, 0.1) !important;
+      color: var(--red) !important;
+    }
+
+    .quiz-opt.disabled {
+      cursor: default;
+    }
+
+    .opt-letter {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      background: rgba(0, 229, 255, 0.1);
+      color: var(--accent);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .quiz-feedback {
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: none;
+      animation: fadeIn .3s ease;
+    }
+
+    .quiz-feedback.correct {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--green);
+    }
+
+    .quiz-feedback.wrong {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--red);
+    }
+
+    .quiz-feedback h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .quiz-feedback p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .quiz-feedback.correct h4 {
+      color: var(--green);
+    }
+
+    .quiz-feedback.wrong h4 {
+      color: var(--red);
+    }
+
+    /* Quiz Result */
+    .quiz-result {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .result-ring {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 6px solid var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+      position: relative;
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.3);
+    }
+
+    .result-ring.bad {
+      border-color: var(--accent3);
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
+    }
+
+    .result-score {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 42px;
+      color: #fff;
+    }
+
+    .result-score span {
+      font-size: 20px;
+      color: var(--text-muted);
+    }
+
+    .result-msg {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .result-sub {
+      color: var(--text-muted);
+      font-size: 16px;
+      margin-bottom: 40px;
+    }
+
+    /* ══════════════════════════════════
+     PAGE 9 – TENTANG
+  ══════════════════════════════════ */
+    .about-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 20px;
+      animation: fadeIn .4s ease;
+    }
+
+    .about-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .about-card p {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .about-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .about-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .about-row .key {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .about-row .val {
+      font-size: 15px;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* ══════════════════════════════════
+     ALUR DATA VISUALIZATION
+  ══════════════════════════════════ */
+    .alur-vis {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 32px 0;
+      flex-wrap: wrap;
+    }
+
+    .alur-box {
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 20px;
+      text-align: center;
+      width: 160px;
+      transition: all .4s;
+    }
+
+    .alur-box h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+      margin-top: 12px;
+    }
+
+    .alur-box p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .alur-box .ab-icon {
+      font-size: 36px;
+    }
+
+    .alur-arr {
+      font-size: 28px;
+      color: var(--accent);
+      padding: 0 12px;
+    }
+
+    /* ══════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════ */
+    @media (max-width:600px) {
+      .quiz-options {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .pc-monitor {
+        width: 280px;
+        height: 170px;
+      }
+
+      .floating-icon {
+        font-size: 26px;
+      }
+
+      .about-info {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-diagram {
+        gap: 4px;
+      }
+
+      .flow-node {
+        min-width: 110px;
+        padding: 14px 10px;
+      }
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════
+     PAGE 1 – SPLASH / HALAMAN UTAMA
+══════════════════════════════════ -->
+  <div id="page-splash" class="page active">
+    <div class="splash-grid"></div>
+    <div class="splash-content">
+      <div class="splash-badge">MEDIA PEMBELAJARAN INTERAKTIF</div>
+      <h1 class="splash-title">DATA<br><span>PATH</span></h1>
+      <p class="splash-sub">Perjalanan Data dari Input ke Output</p>
+      <button class="btn-primary" onclick="goTo('page-menu')">MULAI →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 2 – MENU UTAMA
+══════════════════════════════════ -->
+  <div id="page-menu" class="page">
+    <nav class="topbar">
+      <span class="topbar-logo">DATA PATH</span>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted)">MENU UTAMA</span>
+    </nav>
+    <div class="menu-body">
+      <div class="menu-title">— PILIH MENU —</div>
+      <div class="menu-grid">
+        <div class="menu-card" onclick="goTo('page-tujuan')">
+          <span class="menu-icon">🎯</span>
+          <h3>Tujuan Pembelajaran</h3>
+          <p>Pelajari apa yang akan dicapai setelah menggunakan media ini</p>
+        </div>
+        <div class="menu-card" onclick="goTo('page-panduan')">
+          <span class="menu-icon">📖</span>
+          <h3>Panduan Penggunaan</h3>
+          <p>Cara menggunakan media pembelajaran ini dengan mudah</p>
+        </div>
+        <div class="menu-card" onclick="goTo('page-materi-menu')">
+          <span class="menu-icon">💡</span>
+          <h3>Materi</h3>
+          <p>Input data, pengolahan, hasil data, dan simulasi interaktif</p>
+        </div>
+        <div class="menu-card" onclick="startQuiz()">
+          <span class="menu-icon">📝</span>
+          <h3>Kuis</h3>
+          <p>Uji pemahamanmu dengan soal pilihan ganda interaktif</p>
+        </div>
+        <div class="menu-card" onclick="goTo('page-tentang')">
+          <span class="menu-icon">ℹ️</span>
+          <h3>Tentang</h3>
+          <p>Informasi media pembelajaran dan pembuatnya</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 3 – TUJUAN PEMBELAJARAN
+══════════════════════════════════ -->
+  <div id="page-tujuan" class="page">
+    <nav class="topbar">
+      <button class="btn-back" onclick="goTo('page-menu')">← Kembali</button>
+      <span class="topbar-logo">DATA PATH</span>
+      <button class="btn-menu" onclick="goTo('page-menu')">Menu</button>
+    </nav>
+    <div class="inner-body">
+      <div class="inner-header">
+        <h1>Tujuan <span>Pembelajaran</span></h1>
+        <p>Setelah menggunakan media ini, pengguna diharapkan mampu:</p>
+      </div>
+      <div class="tujuan-card" style="animation-delay:.05s">
+        <div class="tujuan-num">01</div>
+        <div class="tujuan-text">Memahami konsep dasar <strong>alur data</strong> dalam sebuah sistem komputer mulai
+          dari input hingga output.</div>
+      </div>
+      <div class="tujuan-card" style="animation-delay:.1s">
+        <div class="tujuan-num">02</div>
+        <div class="tujuan-text">Menjelaskan perbedaan dan fungsi antara <strong>perangkat input</strong>,
+          <strong>pengolahan data</strong>, dan <strong>perangkat output</strong>.
+        </div>
+      </div>
+      <div class="tujuan-card" style="animation-delay:.15s">
+        <div class="tujuan-num">03</div>
+        <div class="tujuan-text">Menyebutkan contoh nyata perangkat yang berperan dalam setiap tahapan pemrosesan data.
+        </div>
+      </div>
+      <div class="tujuan-card" style="animation-delay:.2s">
+        <div class="tujuan-num">04</div>
+        <div class="tujuan-text">Mensimulasikan proses alur data secara interaktif untuk memperkuat pemahaman
+          konseptual.</div>
+      </div>
+      <div class="tujuan-card" style="animation-delay:.25s">
+        <div class="tujuan-num">05</div>
+        <div class="tujuan-text">Mengevaluasi pemahaman melalui kuis interaktif dan mampu mengidentifikasi jawaban yang
+          benar.</div>
+      </div>
+      <div style="margin-top:32px;text-align:center">
+        <button class="btn-primary" onclick="goTo('page-menu')">Kembali ke Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 4 – PANDUAN PENGGUNAAN
+══════════════════════════════════ -->
+  <div id="page-panduan" class="page">
+    <nav class="topbar">
+      <button class="btn-back" onclick="goTo('page-menu')">← Kembali</button>
+      <span class="topbar-logo">DATA PATH</span>
+      <button class="btn-menu" onclick="goTo('page-menu')">Menu</button>
+    </nav>
+    <div class="inner-body">
+      <div class="inner-header">
+        <h1>Panduan <span>Penggunaan</span></h1>
+        <p>Ikuti langkah berikut agar bisa menggunakan media ini dengan optimal.</p>
+      </div>
+      <div class="panduan-step" style="animation-delay:.05s">
+        <span class="panduan-icon">🏠</span>
+        <div>
+          <h4>Langkah 1 – Mulai dari Halaman Utama</h4>
+          <p>Tekan tombol <strong>MULAI</strong> pada halaman pembuka untuk masuk ke Menu Utama.</p>
+        </div>
+      </div>
+      <div class="panduan-step" style="animation-delay:.1s">
+        <span class="panduan-icon">🗂️</span>
+        <div>
+          <h4>Langkah 2 – Pilih Menu</h4>
+          <p>Pilih salah satu menu yang tersedia: Tujuan Pembelajaran, Panduan, Materi, Kuis, atau Tentang.</p>
+        </div>
+      </div>
+      <div class="panduan-step" style="animation-delay:.15s">
+        <span class="panduan-icon">📚</span>
+        <div>
+          <h4>Langkah 3 – Pelajari Materi</h4>
+          <p>Buka menu <strong>Materi</strong>, pilih topik yang ingin dipelajari: Input Data, Pengolahan Data, Hasil
+            Data, atau Simulasi Data.</p>
+        </div>
+      </div>
+      <div class="panduan-step" style="animation-delay:.2s">
+        <span class="panduan-icon">⚡</span>
+        <div>
+          <h4>Langkah 4 – Coba Simulasi</h4>
+          <p>Masukkan data pada halaman Simulasi Data untuk melihat secara langsung bagaimana data diproses dari input
+            hingga output.</p>
+        </div>
+      </div>
+      <div class="panduan-step" style="animation-delay:.25s">
+        <span class="panduan-icon">📝</span>
+        <div>
+          <h4>Langkah 5 – Kerjakan Kuis</h4>
+          <p>Setelah mempelajari materi, buka menu <strong>Kuis</strong> dan jawab 4 pertanyaan pilihan ganda. Jika
+            salah, kamu bisa mengulang.</p>
+        </div>
+      </div>
+      <div class="panduan-step" style="animation-delay:.3s">
+        <span class="panduan-icon">🔄</span>
+        <div>
+          <h4>Langkah 6 – Navigasi</h4>
+          <p>Gunakan tombol <strong>← Kembali</strong> atau <strong>Menu</strong> di pojok atas untuk berpindah halaman
+            kapan saja.</p>
+        </div>
+      </div>
+      <div style="margin-top:32px;text-align:center">
+        <button class="btn-primary" onclick="goTo('page-menu')">Kembali ke Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 5 – MENU MATERI
+══════════════════════════════════ -->
+  <div id="page-materi-menu" class="page">
+    <nav class="topbar">
+      <button class="btn-back" onclick="goTo('page-menu')">← Kembali</button>
+      <span class="topbar-logo">DATA PATH</span>
+      <button class="btn-menu" onclick="goTo('page-menu')">Menu</button>
+    </nav>
+    <div class="inner-body">
+      <div class="inner-header">
+        <h1>Pilih <span>Materi</span></h1>
+        <p>Pelajari setiap tahapan alur data berikut ini.</p>
+      </div>
+
+      <!-- Alur Data Visual -->
+      <div
+        style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:32px;text-align:center;">
+        <div
+          style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);margin-bottom:16px">
+          ALUR DATA</div>
+        <div class="alur-vis">
+          <div class="alur-box" style="border-color:var(--accent)">
+            <div class="ab-icon">⌨️</div>
+            <h4>INPUT</h4>
+            <p>Data masuk ke sistem</p>
+          </div>
+          <div class="alur-arr">→</div>
+          <div class="alur-box" style="border-color:var(--accent2)">
+            <div class="ab-icon">⚙️</div>
+            <h4>PROSES</h4>
+            <p>Data diolah oleh sistem</p>
+          </div>
+          <div class="alur-arr">→</div>
+          <div class="alur-box" style="border-color:var(--green)">
+            <div class="ab-icon">🖥️</div>
+            <h4>OUTPUT</h4>
+            <p>Hasil ditampilkan</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="materi-grid">
+        <div class="materi-card" onclick="showMateri('input')">
+          <span class="icon">⌨️</span>
+          <h3>Input Data</h3>
+          <p>Perangkat & cara data masuk ke sistem</p>
+        </div>
+        <div class="materi-card" onclick="showMateri('proses')">
+          <span class="icon">⚙️</span>
+          <h3>Pengolahan Data</h3>
+          <p>Bagaimana data diproses oleh komputer</p>
+        </div>
+        <div class="materi-card" onclick="showMateri('hasil')">
+          <span class="icon">🖥️</span>
+          <h3>Hasil Data</h3>
+          <p>Output & cara data ditampilkan</p>
+        </div>
+        <div class="materi-card" onclick="goTo('page-simulasi')">
+          <span class="icon">⚡</span>
+          <h3>Simulasi Data</h3>
+          <p>Coba langsung alur data interaktif</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 6 – MATERI DETAIL
+══════════════════════════════════ -->
+  <div id="page-materi" class="page">
+    <nav class="topbar">
+      <button class="btn-back" onclick="goTo('page-materi-menu')">← Materi</button>
+      <span class="topbar-logo">DATA PATH</span>
+      <button class="btn-menu" onclick="goTo('page-menu')">Menu</button>
+    </nav>
+    <div class="inner-body" id="materi-content">
+      <!-- Content injected by JS -->
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 7 – SIMULASI DATA
+══════════════════════════════════ -->
+  <div id="page-simulasi" class="page">
+    <nav class="topbar">
+      <button class="btn-back" onclick="goTo('page-materi-menu')">← Materi</button>
+      <span class="topbar-logo">DATA PATH</span>
+      <button class="btn-menu" onclick="goTo('page-menu')">Menu</button>
+    </nav>
+    <div class="inner-body">
+      <div class="inner-header">
+        <h1>Simulasi <span>Data</span></h1>
+        <p>Masukkan namamu dan lihat bagaimana data diproses dari input hingga output!</p>
+      </div>
+      <div class="sim-container">
+        <div class="sim-input-area">
+          <label>INPUT DATA</label>
+          <input type="text" class="sim-input" id="sim-input" placeholder="Ketikkan namamu di sini..."
+            oninput="resetSim()" maxlength="30">
+          <div style="margin-top:16px;display:flex;gap:12px">
+            <button class="btn-primary" onclick="runSim()">▶ Jalankan Simulasi</button>
+            <button class="btn-secondary"
+              onclick="resetSim();document.getElementById('sim-input').value=''">Reset</button>
+          </div>
+        </div>
+
+        <!-- Flow Diagram -->
+        <div class="flow-diagram">
+          <div class="flow-node" id="fn-input">
+            <span class="fn-icon">⌨️</span>
+            <h4>INPUT</h4>
+            <div class="fn-val" id="fn-input-val">—</div>
+          </div>
+          <div class="flow-arrow" id="fa1">→</div>
+          <div class="flow-node" id="fn-proses">
+            <span class="fn-icon">⚙️</span>
+            <h4>PENGOLAHAN</h4>
+            <div class="fn-val" id="fn-proses-val">—</div>
+          </div>
+          <div class="flow-arrow" id="fa2">→</div>
+          <div class="flow-node" id="fn-output">
+            <span class="fn-icon">🖥️</span>
+            <h4>HASIL DATA</h4>
+            <div class="fn-val" id="fn-output-val">—</div>
+          </div>
+        </div>
+
+        <div class="sim-result" id="sim-result">
+          <h4>OUTPUT</h4>
+          <div class="result-text" id="sim-result-text">Jalankan simulasi untuk melihat hasil</div>
+        </div>
+
+        <div
+          style="margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+          <div
+            style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);margin-bottom:12px">
+            💡 PENJELASAN PROSES</div>
+          <p style="font-size:14px;color:var(--text-muted);line-height:1.7" id="sim-explain">Simulasi ini menggambarkan
+            bagaimana komputer menerima data dari pengguna (input), kemudian memprosesnya (CPU/sistem), dan menampilkan
+            hasilnya kepada pengguna (output).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 8 – KUIS (START)
+══════════════════════════════════ -->
+  <div id="page-kuis" class="page">
+    <nav class="topbar">
+      <button class="btn-back" onclick="goTo('page-menu')">← Menu</button>
+      <span class="topbar-logo">DATA PATH</span>
+    </nav>
+    <div class="quiz-start" id="quiz-start-area">
+      <div style="font-size:60px;margin-bottom:24px">📝</div>
+      <h2>Kuis <span style="color:var(--accent)">Interaktif</span></h2>
+      <p>Uji pemahamanmu tentang alur data!<br>Terdapat <strong>4 soal</strong> pilihan ganda. Jika salah, kamu bisa
+        mengulang.</p>
+      <button class="btn-primary" onclick="beginQuiz()">Mulai Kuis →</button>
+    </div>
+
+    <div class="quiz-question-area" id="quiz-q-area" style="display:none">
+      <div class="quiz-progress">
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" id="quiz-prog-fill" style="width:25%"></div>
+        </div>
+        <span class="quiz-progress-text" id="quiz-prog-text">Soal 1 / 4</span>
+      </div>
+
+      <div class="quiz-q-card" id="quiz-q-card">
+        <h3 id="quiz-question">—</h3>
+      </div>
+
+      <div class="quiz-feedback" id="quiz-feedback">
+        <h4 id="fb-title">—</h4>
+        <p id="fb-body">—</p>
+      </div>
+
+      <div class="quiz-options" id="quiz-options"></div>
+
+      <div style="margin-top:24px;text-align:right">
+        <button class="btn-primary" id="btn-next" style="display:none" onclick="nextQuestion()">Lanjut →</button>
+      </div>
+    </div>
+
+    <div class="quiz-result" id="quiz-result-area" style="display:none">
+      <div class="result-ring" id="result-ring">
+        <div class="result-score" id="result-score">0<span>/4</span></div>
+      </div>
+      <div class="result-msg" id="result-msg">—</div>
+      <div class="result-sub" id="result-sub">—</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+        <button class="btn-primary" onclick="retryQuiz()">🔄 Ulangi Kuis</button>
+        <button class="btn-secondary" onclick="goTo('page-menu')">Kembali ke Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     PAGE 9 – TENTANG
+══════════════════════════════════ -->
+  <div id="page-tentang" class="page">
+    <nav class="topbar">
+      <button class="btn-back" onclick="goTo('page-menu')">← Kembali</button>
+      <span class="topbar-logo">DATA PATH</span>
+      <button class="btn-menu" onclick="goTo('page-menu')">Menu</button>
+    </nav>
+    <div class="inner-body">
+      <div class="inner-header">
+        <h1>Tentang <span>Media</span></h1>
+      </div>
+      <div class="about-card">
+        <h3>TENTANG MEDIA</h3>
+        <p>DATA PATH (Perjalanan Data dari Input ke Output) adalah media pembelajaran interaktif yang dirancang untuk
+          membantu pengguna memahami bagaimana data diproses dalam sebuah sistem komputer secara bertahap. Media ini
+          menyajikan konsep alur data mulai dari data masuk, diolah, hingga menghasilkan keluaran dengan pendekatan
+          visual dan interaktif.</p>
+      </div>
+      <div class="about-card">
+        <h3>FITUR UTAMA</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+          <div
+            style="background:rgba(0,229,255,0.05);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px">
+            🎯 Tujuan Pembelajaran</div>
+          <div
+            style="background:rgba(0,229,255,0.05);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px">
+            📖 Panduan Penggunaan</div>
+          <div
+            style="background:rgba(0,229,255,0.05);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px">
+            💡 Materi Interaktif</div>
+          <div
+            style="background:rgba(0,229,255,0.05);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px">
+            ⚡ Simulasi Data</div>
+          <div
+            style="background:rgba(0,229,255,0.05);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px">
+            📝 Kuis Interaktif</div>
+          <div
+            style="background:rgba(0,229,255,0.05);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px">
+            🔄 Feedback Langsung</div>
+        </div>
+      </div>
+      <div class="about-card">
+        <h3>INFORMASI PEMBUAT</h3>
+        <div class="about-info">
+          <div class="about-row">
+            <span class="key">NAMA</span>
+            <span class="val">Ridho Khusnun Nur Rohim</span>
+          </div>
+          <div class="about-row">
+            <span class="key">FAKULTAS</span>
+            <span class="val">FKIP Universitas Lampung</span>
+          </div>
+          <div class="about-row">
+            <span class="key">NPM</span>
+            <span class="val">2413025023</span>
+          </div>
+          <div class="about-row">
+            <span class="key">TAHUN</span>
+            <span class="val">2026</span>
+          </div>
+          <div class="about-row">
+            <span class="key">PROGRAM STUDI</span>
+            <span class="val">Pendidikan Teknologi Informasi</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:32px;text-align:center">
+        <button class="btn-primary" onclick="goTo('page-menu')">Kembali ke Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════
+       NAVIGATION
+    ═══════════════════════════════════ */
+    function goTo(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(id);
+      target.classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    /* ═══════════════════════════════════
+       MATERI CONTENT DATA
+    ═══════════════════════════════════ */
+    const materiData = {
+      input: {
+        title: 'Input Data',
+        emoji: '⌨️',
+        color: 'var(--accent)',
+        sections: [
+          {
+            title: '📥 Apa itu Input Data?',
+            content: 'Input data adalah proses memasukkan data atau instruksi ke dalam sistem komputer. Data yang dimasukkan bisa berupa teks, angka, suara, gambar, atau gerakan. Tanpa input, komputer tidak mengetahui apa yang harus dikerjakan.',
+            devices: ['⌨️ Keyboard', '🖱️ Mouse', '📷 Kamera', '🎙️ Mikrofon', '📱 Layar Sentuh', '🖊️ Scanner']
+          },
+          {
+            title: '⚙️ Bagaimana Input Bekerja?',
+            content: 'Ketika kamu menekan tombol pada keyboard, perangkat keras mengubah sinyal fisik (tekanan tombol) menjadi sinyal elektrik, lalu dikonversi menjadi kode digital yang bisa dibaca oleh CPU. Proses ini berlangsung dalam hitungan milidetik.',
+            extra: 'Contoh: Saat kamu mengetik huruf "A", keyboard mengirim kode ASCII 65 ke komputer. CPU kemudian memproses kode tersebut dan menampilkannya di layar.'
+          }
+        ]
+      },
+      proses: {
+        title: 'Pengolahan Data',
+        emoji: '⚙️',
+        color: 'var(--accent2)',
+        sections: [
+          {
+            title: '🔄 Apa itu Pengolahan Data?',
+            content: 'Pengolahan data adalah tahap di mana data yang telah diinput diolah, dihitung, dianalisis, atau dimanipulasi oleh sistem komputer untuk menghasilkan informasi yang berguna.',
+            devices: ['🧠 CPU (Central Processing Unit)', '💾 RAM (Memory)', '🗂️ Sistem Operasi', '📟 Chipset']
+          },
+          {
+            title: '🧠 Peran CPU dalam Pemrosesan',
+            content: 'CPU (Central Processing Unit) adalah "otak" komputer. CPU terdiri dari tiga bagian utama: Control Unit (mengatur alur instruksi), ALU/Arithmetic Logic Unit (melakukan perhitungan), dan Register (menyimpan data sementara).',
+            extra: 'Kecepatan CPU diukur dalam GHz (Gigahertz). Semakin tinggi nilai GHz, semakin cepat data dapat diproses. CPU modern bisa melakukan miliaran operasi per detik!'
+          }
+        ]
+      },
+      hasil: {
+        title: 'Hasil Data (Output)',
+        emoji: '🖥️',
+        color: 'var(--green)',
+        sections: [
+          {
+            title: '📤 Apa itu Output Data?',
+            content: 'Output adalah hasil akhir dari proses pengolahan data yang ditampilkan kepada pengguna. Output bisa berbentuk visual (gambar, teks di layar), suara (audio dari speaker), atau bentuk fisik (dokumen cetak dari printer).',
+            devices: ['🖥️ Monitor', '🖨️ Printer', '🔊 Speaker', '📺 Proyektor', '📟 Headphone', '💡 LED Indicator']
+          },
+          {
+            title: '🔗 Hubungan Input–Proses–Output',
+            content: 'Ketiga tahapan ini saling berkaitan dan tidak bisa dipisahkan. Tanpa input yang baik, proses tidak bisa berjalan optimal. Tanpa proses yang benar, output yang dihasilkan pun tidak akurat.',
+            extra: 'Contoh lengkap: Kamu mengetik 10 + 5 (INPUT) → Kalkulator memproses perhitungan (PROSES) → Layar menampilkan angka 15 (OUTPUT).'
+          }
+        ]
+      }
+    };
+
+    function showMateri(type) {
+      const data = materiData[type];
+      let html = `
+    <div class="materi-content">
+      <div class="inner-header">
+        <h1>${data.emoji} <span>${data.title}</span></h1>
+      </div>
+  `;
+
+      data.sections.forEach((sec, i) => {
+        html += `<div class="materi-section" style="animation-delay:${i * 0.1}s">
+      <h3>${sec.title}</h3>
+      <p>${sec.content}</p>`;
+        if (sec.devices) {
+          html += `<div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);margin-bottom:8px">CONTOH PERANGKAT</div>
+      <div class="device-row">`;
+          sec.devices.forEach(d => { html += `<div class="device-chip">${d}</div>`; });
+          html += `</div>`;
+        }
+        if (sec.extra) {
+          html += `<div style="background:rgba(0,229,255,0.05);border-left:3px solid ${data.color};padding:14px 16px;border-radius:0 8px 8px 0;margin-top:16px;font-size:14px;color:var(--text-muted);line-height:1.7">${sec.extra}</div>`;
+        }
+        html += `</div>`;
+      });
+
+      // Nav buttons
+      const prev = type === 'proses' ? 'input' : type === 'hasil' ? 'proses' : null;
+      const next = type === 'input' ? 'proses' : type === 'proses' ? 'hasil' : null;
+      html += `<div class="materi-nav">`;
+      if (prev) html += `<button class="btn-secondary" onclick="showMateri('${prev}')">← ${materiData[prev].title}</button>`;
+      else html += `<div></div>`;
+      if (next) html += `<button class="btn-primary" onclick="showMateri('${next}')">${materiData[next].title} →</button>`;
+      else html += `<button class="btn-primary" onclick="goTo('page-simulasi')">Coba Simulasi →</button>`;
+      html += `</div></div>`;
+
+      document.getElementById('materi-content').innerHTML = html;
+      goTo('page-materi');
+    }
+
+    /* ═══════════════════════════════════
+       SIMULASI DATA
+    ═══════════════════════════════════ */
+    function resetSim() {
+      ['fn-input', 'fn-proses', 'fn-output'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('active', 'done');
+      });
+      ['fa1', 'fa2'].forEach(id => document.getElementById(id).classList.remove('active'));
+      document.getElementById('fn-input-val').textContent = '—';
+      document.getElementById('fn-proses-val').textContent = '—';
+      document.getElementById('fn-output-val').textContent = '—';
+      document.getElementById('sim-result').classList.remove('show');
+      document.getElementById('sim-result-text').textContent = 'Jalankan simulasi untuk melihat hasil';
+      document.getElementById('sim-explain').textContent = 'Simulasi ini menggambarkan bagaimana komputer menerima data dari pengguna (input), kemudian memprosesnya (CPU/sistem), dan menampilkan hasilnya kepada pengguna (output).';
+    }
+
+    function runSim() {
+      const val = document.getElementById('sim-input').value.trim();
+      if (!val) { alert('Masukkan data terlebih dahulu!'); return; }
+
+      resetSim();
+
+      // Step 1: Input
+      setTimeout(() => {
+        const inp = document.getElementById('fn-input');
+        inp.classList.add('active');
+        document.getElementById('fn-input-val').textContent = `"${val}"`;
+      }, 200);
+
+      // Arrow 1
+      setTimeout(() => {
+        document.getElementById('fa1').classList.add('active');
+      }, 900);
+
+      // Step 2: Proses
+      setTimeout(() => {
+        document.getElementById('fn-input').classList.remove('active');
+        document.getElementById('fn-input').classList.add('done');
+        const pr = document.getElementById('fn-proses');
+        pr.classList.add('active');
+        document.getElementById('fn-proses-val').textContent = 'Memproses...';
+      }, 1100);
+
+      // Arrow 2
+      setTimeout(() => {
+        document.getElementById('fa2').classList.add('active');
+        document.getElementById('fn-proses-val').textContent = 'Binary →';
+      }, 1800);
+
+      // Step 3: Output
+      const result = `Halo, ${val}! 👋 Data kamu telah diproses.`;
+      setTimeout(() => {
+        document.getElementById('fn-proses').classList.remove('active');
+        document.getElementById('fn-proses').classList.add('done');
+        const out = document.getElementById('fn-output');
+        out.classList.add('active');
+        document.getElementById('fn-output-val').textContent = 'Siap!';
+        setTimeout(() => {
+          out.classList.remove('active'); out.classList.add('done');
+          document.getElementById('sim-result').classList.add('show');
+          document.getElementById('sim-result-text').textContent = result;
+          document.getElementById('sim-explain').textContent = `✅ Proses selesai! Data "${val}" yang kamu masukkan melalui perangkat input (keyboard) telah diproses oleh sistem (CPU/memori) dan menghasilkan output: "${result}". Inilah cara kerja alur data dalam sistem komputer!`;
+        }, 400);
+      }, 2100);
+    }
+
+    /* ═══════════════════════════════════
+       KUIS
+    ═══════════════════════════════════ */
+    const questions = [
+      {
+        q: 'Apa yang dimaksud dengan "Input Data" dalam sistem komputer?',
+        opts: [
+          'Data yang dihasilkan setelah proses pengolahan',
+          'Proses memasukkan data atau instruksi ke dalam sistem komputer',
+          'Perangkat yang digunakan untuk mencetak dokumen',
+          'Cara komputer menyimpan data secara permanen'
+        ],
+        answer: 1,
+        explanation: 'Input data adalah proses memasukkan data atau instruksi ke dalam sistem komputer. Contoh perangkat input antara lain keyboard, mouse, dan mikrofon.'
+      },
+      {
+        q: 'Manakah yang merupakan contoh PERANGKAT OUTPUT?',
+        opts: [
+          'Keyboard dan Mouse',
+          'Scanner dan Kamera',
+          'Monitor dan Printer',
+          'CPU dan RAM'
+        ],
+        answer: 2,
+        explanation: 'Monitor dan Printer adalah perangkat output karena menampilkan/menghasilkan hasil pengolahan data kepada pengguna. Keyboard/Mouse adalah input, CPU/RAM adalah pemrosesan.'
+      },
+      {
+        q: 'Dalam alur data, urutan yang benar adalah ...',
+        opts: [
+          'Output → Proses → Input',
+          'Proses → Input → Output',
+          'Input → Output → Proses',
+          'Input → Proses → Output'
+        ],
+        answer: 3,
+        explanation: 'Urutan yang benar adalah Input → Proses → Output. Data pertama dimasukkan (input), kemudian diolah oleh sistem (proses), dan hasilnya ditampilkan (output).'
+      },
+      {
+        q: 'Komponen komputer yang berperan sebagai "otak" dalam memproses data adalah ...',
+        opts: [
+          'RAM (Random Access Memory)',
+          'HDD (Hard Disk Drive)',
+          'CPU (Central Processing Unit)',
+          'GPU (Graphics Processing Unit)'
+        ],
+        answer: 2,
+        explanation: 'CPU (Central Processing Unit) adalah "otak" komputer yang bertugas memproses semua instruksi dan data. CPU terdiri dari Control Unit, ALU, dan Register.'
+      }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+    let answered = false;
+
+    function startQuiz() { goTo('page-kuis'); }
+
+    function beginQuiz() {
+      currentQ = 0; score = 0; answered = false;
+      document.getElementById('quiz-start-area').style.display = 'none';
+      document.getElementById('quiz-result-area').style.display = 'none';
+      document.getElementById('quiz-q-area').style.display = 'block';
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      answered = false;
+      const q = questions[currentQ];
+      const prog = ((currentQ + 1) / questions.length) * 100;
+      document.getElementById('quiz-prog-fill').style.width = prog + '%';
+      document.getElementById('quiz-prog-text').textContent = `Soal ${currentQ + 1} / ${questions.length}`;
+      document.getElementById('quiz-question').textContent = q.q;
+
+      const fb = document.getElementById('quiz-feedback');
+      fb.style.display = 'none'; fb.className = 'quiz-feedback';
+
+      document.getElementById('btn-next').style.display = 'none';
+
+      const letters = ['A', 'B', 'C', 'D'];
+      let html = '';
+      q.opts.forEach((opt, i) => {
+        html += `<button class="quiz-opt" id="opt-${i}" onclick="selectOpt(${i})">
+      <span class="opt-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>`;
+      });
+      document.getElementById('quiz-options').innerHTML = html;
+    }
+
+    function selectOpt(i) {
+      if (answered) return;
+      answered = true;
+
+      const q = questions[currentQ];
+      const isCorrect = i === q.answer;
+      if (isCorrect) score++;
+
+      // Style options
+      document.querySelectorAll('.quiz-opt').forEach((el, idx) => {
+        el.classList.add('disabled');
+        if (idx === q.answer) el.classList.add('correct');
+        else if (idx === i && !isCorrect) el.classList.add('wrong');
+      });
+
+      // Show feedback
+      const fb = document.getElementById('quiz-feedback');
+      fb.style.display = 'block';
+      if (isCorrect) {
+        fb.classList.add('correct');
+        document.getElementById('fb-title').textContent = '✅ Jawaban Kamu Benar! Yey kamu sudah memahami materi dengan baik.';
+        document.getElementById('fb-body').textContent = q.explanation;
+      } else {
+        fb.classList.add('wrong');
+        document.getElementById('fb-title').textContent = '❌ Jawaban Kurang Tepat. Yuk ulangi lagi atau pelajari kembali materinya!';
+        document.getElementById('fb-body').textContent = q.explanation;
+      }
+
+      document.getElementById('btn-next').style.display = 'inline-block';
+    }
+
+    function nextQuestion() {
+      currentQ++;
+      if (currentQ < questions.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById('quiz-q-area').style.display = 'none';
+      document.getElementById('quiz-result-area').style.display = 'flex';
+
+      const ring = document.getElementById('result-ring');
+      document.getElementById('result-score').innerHTML = `${score}<span>/${questions.length}</span>`;
+
+      if (score === questions.length) {
+        ring.classList.remove('bad');
+        document.getElementById('result-msg').innerHTML = '🎉 Kamu sudah Paham!';
+        document.getElementById('result-sub').textContent = 'Luar biasa! Kamu menjawab semua soal dengan benar. Pemahaman tentang alur data sangat baik!';
+      } else if (score >= 2) {
+        ring.classList.remove('bad');
+        document.getElementById('result-msg').innerHTML = '👍 Hampir Sempurna!';
+        document.getElementById('result-sub').textContent = `Kamu menjawab ${score} dari ${questions.length} soal dengan benar. Pelajari lagi materi yang belum dipahami ya!`;
+      } else {
+        ring.classList.add('bad');
+        document.getElementById('result-msg').innerHTML = '💪 Coba lagi yaa!';
+        document.getElementById('result-sub').textContent = `Kamu menjawab ${score} dari ${questions.length} soal. Pelajari kembali materinya dan coba lagi!`;
+      }
+    }
+
+    function retryQuiz() {
+      document.getElementById('quiz-result-area').style.display = 'none';
+      document.getElementById('quiz-start-area').style.display = 'flex';
+    }
+  </script>
+</body>
+
+</html>
